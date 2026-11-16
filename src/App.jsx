@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { API_KEY, buildUrl } from "./api/tmdb.js";
+import { API_KEY, buildUrl, fetchJson, mergeLanguages } from "./api/tmdb.js";
 import useLocalStorage from "./hooks/useLocalStorage.js";
 import MovieCard from "./components/MovieCard.jsx";
 import MovieModal from "./components/MovieModal.jsx";
@@ -28,20 +28,32 @@ export default function App() {
     const { query, page } = search;
     let cancelled = false;
 
-    fetch(buildUrl(query, page))
-      .then((res) => {
-        if (!res.ok) throw new Error("Server xatosi");
-        return res.json();
-      })
-      .then((json) => {
+    // O'zbekcha va inglizcha natijalarni parallel olamiz (biri ishlamasa ikkinchisi yetadi)
+    Promise.allSettled([
+      fetchJson(buildUrl(query, page, "uz-UZ")),
+      fetchJson(buildUrl(query, page, "en-US")),
+    ])
+      .then(([uzRes, enRes]) => {
         if (cancelled) return;
-        setResult((prev) => ({
-          query,
-          page,
-          items: page === 1 || prev.query !== query ? json.results : [...prev.items, ...json.results],
-          totalPages: json.total_pages,
-          error: "",
-        }));
+        if (uzRes.status === "rejected" && enRes.status === "rejected") {
+          throw new Error("Server xatosi");
+        }
+        const empty = { results: [], total_pages: 0 };
+        const uz = uzRes.status === "fulfilled" ? uzRes.value : empty;
+        const en = enRes.status === "fulfilled" ? enRes.value : empty;
+        const merged = mergeLanguages(uz.results, en.results);
+
+        setResult((prev) => {
+          const keepOld = page > 1 && prev.query === query;
+          const seen = new Set(keepOld ? prev.items.map((m) => m.id) : []);
+          return {
+            query,
+            page,
+            items: keepOld ? [...prev.items, ...merged.filter((m) => !seen.has(m.id))] : merged,
+            totalPages: Math.max(uz.total_pages, en.total_pages),
+            error: "",
+          };
+        });
       })
       .catch(() => {
         if (cancelled) return;
@@ -85,7 +97,7 @@ export default function App() {
             type="search"
             value={input}
             onChange={(e) => handleInput(e.target.value)}
-            placeholder="Kino nomini yozing..."
+            placeholder="Kino nomini yozing (o'zbekcha yoki inglizcha)..."
             className="min-w-0 flex-1 rounded-xl border border-slate-700 bg-slate-800 px-4 py-2 outline-none focus:border-amber-400"
           />
           <button

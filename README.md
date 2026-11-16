@@ -3,9 +3,9 @@
 Kinolarni qidirish, sevimlilarga qo'shish va tavsifini ko'rish uchun React ilovasi.
 
 ## Imkoniyatlar
-- Kino nomi bo'yicha qidiruv (yozishdan to'xtagandan keyin avtomatik)
+- Kino nomi bo'yicha qidiruv, o'zbekcha va inglizcha nomlar bilan (yozishdan to'xtagandan keyin avtomatik)
 - Mashhur kinolar ro'yxati va "Yana yuklash" tugmasi
-- Kino haqida batafsil oyna (reyting, sana, tavsif)
+- Kino haqida batafsil oyna (reyting, sana, tavsif) va YouTube treyleri
 - Sevimli kinolar (brauzer xotirasida saqlanadi)
 - Yuklanish, xato va bo'sh natija holatlari
 - Telefon va kompyuter uchun moslashuvchan dizayn
